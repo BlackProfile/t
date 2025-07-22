@@ -419,7 +419,15 @@
 
         // Global variables for Firebase config and app ID
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const firebaseConfig = {
+  apiKey: "AIzaSyB3q9XfIbQqEQ1E7yeTiqyJZbFZwXm8C98",
+  authDomain: "t-project-off.firebaseapp.com",
+  projectId: "t-project-off",
+  storageBucket: "t-project-off.firebasestorage.app",
+  messagingSenderId: "778978334644",
+  appId: "1:778978334644:web:b85a0705e9a33bbcea44e1",
+  measurementId: "G-XMQV3WXQCM"
+};
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
