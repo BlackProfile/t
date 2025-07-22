@@ -1,1 +1,1356 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pesan Anonim</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better content flow */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .page-section {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 600px; /* Default max-width for most sections */
+            margin-top: 20px; /* Add some top margin */
+        }
+        .page-section.admin-panel-width {
+            max-width: 800px; /* Wider for admin panel */
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative; /* Added for absolute positioning of the close button */
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .message-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            word-wrap: break-word;
+            display: flex;
+            flex-direction: column;
+        }
+        .message-card .timestamp {
+            font-size: 0.8em;
+            color: #6b7280;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .message-card .sender-info {
+            font-size: 0.9em;
+            color: #4b5563;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 1.2em;
+            color: #333;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        button {
+            background-color: #4f46e5;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        /* Style for the close button */
+        .close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem; /* Adjust font size for icon */
+            color: #6b7280;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s, color 0.2s;
+            line-height: 1; /* Ensure icon is centered vertically */
+            width: 30px; /* Make it a square for better click area */
+            height: 30px; /* Make it a square for better click area */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .close-button:hover {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        .close-button svg {
+            width: 20px; /* Adjust SVG size */
+            height: 20px; /* Adjust SVG size */
+        }
+        .moderation-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: flex-end;
+        }
+        .moderation-buttons button {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .approve-btn {
+            background-color: #22c55e; /* green-500 */
+        }
+        .approve-btn:hover {
+            background-color: #16a34a; /* green-600 */
+        }
+        .reject-btn {
+            background-color: #ef4444; /* red-500 */
+        }
+        .reject-btn:hover {
+            background-color: #dc2626; /* red-600 */
+        }
+        .reply-btn {
+            background-color: #3b82f6; /* blue-500 */
+        }
+        .reply-btn:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-top: 5px;
+            text-align: right;
+            align-self: flex-end;
+        }
+        .status-pending {
+            background-color: #fcd34d; /* amber-300 */
+            color: #92400e; /* amber-900 */
+        }
+        .status-approved {
+            background-color: #a7f3d0; /* emerald-200 */
+            color: #065f46; /* emerald-900 */
+        }
+        .status-rejected {
+            background-color: #fecaca; /* red-200 */
+            color: #991b1b; /* red-900 */
+        }
+        .admin-reply-card {
+            background-color: #e0f2fe; /* light blue */
+            border-left: 4px solid #38bdf8; /* blue-400 */
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
+            font-style: italic;
+            color: #1e3a8a; /* dark blue */
+        }
+        .admin-reply-card .reply-timestamp {
+            font-size: 0.7em;
+            color: #60a5fa; /* blue-400 */
+            text-align: right;
+            margin-top: 5px;
+        }
+        .filter-buttons button {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .filter-buttons button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .filter-buttons button:not(.active):hover {
+            background-color: #e2e8f0; /* gray-200 */
+        }
+        .stats-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 10px;
+        }
+        .stats-item p {
+            margin: 0;
+        }
+        .user-list-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .user-list-item:hover {
+            background-color: #f0f4f8; /* Lighter gray on hover */
+        }
+        .location-info {
+            font-size: 0.85em;
+            color: #4b5563;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .location-info svg {
+            width: 16px;
+            height: 16px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay" class="loading-overlay hidden">Memuat...</div>
+
+    <!-- Halaman Login Nama Pengguna -->
+    <div id="user-login-section" class="page-section">
+        <div class="container mt-20">
+            <h1 class="text-3xl font-bold text-center text-gray-800">Selamat Datang!</h1>
+            <p class="text-center text-gray-600">Masukkan nama Anda untuk melanjutkan ke chat anonim.</p>
+
+            <div class="p-5 bg-indigo-50 rounded-xl shadow-inner">
+                <label for="nameInput" class="block text-gray-700 text-sm font-bold mb-2">Nama Anda:</label>
+                <input type="text" id="nameInput"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200"
+                       placeholder="Contoh: Pengguna Anonim 123">
+                <button id="enterChatBtn"
+                        class="mt-4 w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105">
+                    Masuk Chat Anonim
+                </button>
+            </div>
+
+            <div class="mt-6 text-center">
+                <!-- Tautan admin dibuat tidak terlihat tapi tetap bisa diklik -->
+                <a href="#" id="showAdminLoginLink" class="opacity-0 text-indigo-600 hover:text-indigo-800 font-semibold text-sm">Masuk sebagai Admin</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Halaman Chat Utama -->
+    <div id="chat-section" class="page-section hidden">
+        <div class="container">
+            <!-- Close button for chat section -->
+            <button id="closeChatBtn" class="close-button" title="Kembali ke halaman login">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+
+            <h1 class="text-3xl font-bold text-center text-gray-800">Kirim Pesan Anonim</h1>
+            <p class="text-center text-gray-600">Bagikan pikiran Anda secara anonim.</p>
+
+            <!-- Formulir Kirim Pesan -->
+            <div class="p-5 bg-indigo-50 rounded-xl shadow-inner">
+                <h2 id="chatGreeting" class="text-2xl font-semibold text-gray-700 mb-4">Kirim Pesan Baru</h2>
+                <textarea id="messageInput"
+                          class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200"
+                          placeholder="Tulis pesan anonim Anda di sini..."></textarea>
+                <button id="sendMessageBtn"
+                        class="mt-4 w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105">
+                    Kirim Pesan
+                </button>
+            </div>
+
+            <!-- New: Link to Public Board -->
+            <div class="mt-6 text-center">
+                <a href="#" id="showPublicBoardLink" class="text-indigo-600 hover:text-indigo-800 font-semibold text-sm">Lihat Papan Pengumuman Anonim</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- New: Public Board Section -->
+    <div id="public-board-section" class="page-section hidden">
+        <div class="container">
+            <button id="closePublicBoardBtn" class="close-button" title="Kembali ke chat">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <h1 class="text-3xl font-bold text-center text-gray-800">Papan Pengumuman Anonim</h1>
+            <p class="text-center text-gray-600">Pesan-pesan yang disetujui secara anonim dari komunitas.</p>
+
+            <div id="publicMessagesContainer" class="flex flex-col gap-3">
+                <p id="noPublicMessages" class="text-center text-gray-500 hidden">Belum ada pesan yang disetujui.</p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Halaman Login Admin -->
+    <div id="admin-login-section" class="page-section hidden">
+        <div class="container mt-20">
+            <!-- Close button for admin login section -->
+            <button id="closeAdminLoginBtn" class="close-button" title="Kembali ke halaman login pengguna">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+
+            <h1 class="text-3xl font-bold text-center text-gray-800">Login Admin</h1>
+            <p class="text-center text-gray-600">Masukkan kredensial admin Anda.</p>
+
+            <div class="p-5 bg-indigo-50 rounded-xl shadow-inner">
+                <div class="mb-4">
+                    <label for="adminUsername" class="block text-gray-700 text-sm font-bold mb-2">Username:</label>
+                    <input type="text" id="adminUsername" placeholder="Masukkan username" class="w-full">
+                </div>
+
+                <div id="passwordField" class="mb-6 hidden">
+                    <label for="adminPassword" class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+                    <input type="password" id="adminPassword" placeholder="Masukkan password" class="w-full">
+                </div>
+
+                <!-- Tombol login telah dihapus -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Halaman Panel Admin -->
+    <div id="admin-panel-section" class="page-section admin-panel-width">
+        <div class="container">
+            <!-- Close button for admin panel section -->
+            <button id="closeAdminPanelBtn" class="close-button" title="Logout dari panel admin">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+
+            <h1 class="text-3xl font-bold text-center text-gray-800">Panel Admin</h1>
+            <p class="text-center text-gray-600">Lihat dan kelola pesan anonim.</p>
+
+            <!-- Message Statistics Section (Simple/Inline) -->
+            <div class="p-5 bg-blue-50 rounded-xl shadow-inner mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">Statistik Pesan</h2>
+                <div class="flex flex-wrap justify-around items-center gap-4 text-center">
+                    <div class="stats-item">
+                        <p class="text-sm text-gray-600">Total</p>
+                        <p id="totalMessagesCount" class="text-xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="stats-item">
+                        <p class="text-sm text-gray-600">Tertunda</p>
+                        <p id="pendingMessagesCount" class="text-xl font-bold text-yellow-600">0</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Disetujui</p>
+                        <p id="approvedMessagesCount" class="text-xl font-bold text-green-600">0</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Ditolak</p>
+                        <p id="rejectedMessagesCount" class="text-xl font-bold text-red-600">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management Section -->
+            <div class="p-5 bg-gray-50 rounded-xl shadow-inner mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">Manajemen Pengguna</h2>
+                <div id="userListContainer" class="flex flex-col gap-2">
+                    <p id="noUsers" class="text-center text-gray-500 hidden">Tidak ada pengguna yang terdaftar.</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                <h2 class="text-2xl font-semibold text-gray-700">Daftar Pesan</h2>
+                <div class="flex flex-wrap gap-2 filter-buttons">
+                    <button id="filterAll" class="bg-gray-200 text-gray-800 active">Semua</button>
+                    <button id="filterPending" class="bg-gray-200 text-gray-800">Tertunda</button>
+                    <button id="filterApproved" class="bg-gray-200 text-gray-800">Disetujui</button>
+                    <button id="filterRejected" class="bg-gray-200 text-gray-800">Ditolak</button>
+                </div>
+                <button id="downloadMessagesBtn" class="bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-600 transition duration-300">Download Pesan</button>
+            </div>
+
+
+            <div id="adminMessagesContainer" class="flex flex-col gap-3">
+                <!-- Pesan akan dimuat di sini -->
+                <p id="noAdminMessages" class="text-center text-gray-500 hidden">Belum ada pesan.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, deleteDoc, doc, updateDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase config and app ID
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null; // To store the current user's ID
+        let userName = null; // To store the user's entered name
+        let lastMessageSentTime = 0; // For rate limiting
+        const MESSAGE_COOLDOWN_TIME = 5000; // 5 seconds cooldown
+
+        // DOM elements for all sections
+        const userLoginSection = document.getElementById('user-login-section');
+        const chatSection = document.getElementById('chat-section');
+        const publicBoardSection = document.getElementById('public-board-section'); // New: Public Board Section
+        const adminLoginSection = document.getElementById('admin-login-section');
+        const adminPanelSection = document.getElementById('admin-panel-section');
+
+        // User Login Elements
+        const nameInput = document.getElementById('nameInput');
+        const enterChatBtn = document.getElementById('enterChatBtn');
+        const showAdminLoginLink = document.getElementById('showAdminLoginLink');
+
+        // Chat Elements
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const chatGreeting = document.getElementById('chatGreeting'); // Get the chat greeting element
+        const closeChatBtn = document.getElementById('closeChatBtn'); // Close button for chat
+        const showPublicBoardLink = document.getElementById('showPublicBoardLink'); // New: Link to Public Board
+
+        // Public Board Elements
+        const publicMessagesContainer = document.getElementById('publicMessagesContainer'); // New: Public messages container
+        const noPublicMessagesText = document.getElementById('noPublicMessages');       // New: No public messages message
+        const closePublicBoardBtn = document.getElementById('closePublicBoardBtn');     // New: Close button for public board
+
+        // Admin Login Elements
+        const adminUsernameInput = document.getElementById('adminUsername');
+        const adminPasswordField = document.getElementById('passwordField');
+        const adminPasswordInput = document.getElementById('adminPassword'); // Corrected assignment
+        const closeAdminLoginBtn = document.getElementById('closeAdminLoginBtn'); // New: Close button for admin login
+
+        // Admin Panel Elements
+        const totalMessagesCount = document.getElementById('totalMessagesCount');       // New: Total messages count
+        const pendingMessagesCount = document.getElementById('pendingMessagesCount');   // New: Pending messages count
+        const approvedMessagesCount = document.getElementById('approvedMessagesCount'); // New: Approved messages count
+        const rejectedMessagesCount = document.getElementById('rejectedMessagesCount'); // New: Rejected messages count
+
+        const userListContainer = document.getElementById('userListContainer');   // User list container
+        const noUsersText = document.getElementById('noUsers');                   // No users message
+        const adminMessagesContainer = document.getElementById('adminMessagesContainer');
+        const noAdminMessagesText = document.getElementById('noAdminMessages');
+        const downloadMessagesBtn = document.getElementById('downloadMessagesBtn'); // Changed from logoutBtn
+        const closeAdminPanelBtn = document.getElementById('closeAdminPanelBtn'); // New: Close button for admin panel
+
+        const filterAllBtn = document.getElementById('filterAll');             // New: Filter buttons
+        const filterPendingBtn = document.getElementById('filterPending');
+        const filterApprovedBtn = document.getElementById('filterApproved');
+        const filterRejectedBtn = document.getElementById('filterRejected');
+
+        let currentMessageFilter = 'all'; // Default filter for admin panel
+
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        const CORRECT_USERNAME = "admin";
+        const CORRECT_PASSWORD = "timothy";
+
+        /**
+         * Hides all main application sections.
+         */
+        function hideAllSections() {
+            userLoginSection.classList.add('hidden');
+            chatSection.classList.add('hidden');
+            publicBoardSection.classList.add('hidden'); // Hide public board
+            adminLoginSection.classList.add('hidden');
+            adminPanelSection.classList.add('hidden');
+        }
+
+        /**
+         * Shows the loading overlay.
+         */
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the loading overlay.
+         */
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        /**
+         * Displays a SweetAlert2 message.
+         * @param {string} icon - 'success', 'error', 'warning', 'info', 'question'
+         * @param {string} title - The title of the alert.
+         * @param {string} text - The main text content.
+         * @param {number} [timer] - Optional: auto-close timer in ms.
+         * @param {string} [confirmButtonColor] - Optional: color for the confirm button.
+         * @returns {Promise<SweetAlertResult>} A promise that resolves when the alert is closed.
+         */
+        function showAlert(icon, title, text, timer = null, confirmButtonColor = '#4f46e5') {
+            return Swal.fire({
+                icon: icon,
+                title: title,
+                html: text, // Use html to allow for line breaks if needed
+                showConfirmButton: timer ? false : true,
+                timer: timer,
+                confirmButtonColor: confirmButtonColor
+            });
+        }
+
+        // --- Navigation Logic ---
+
+        /**
+         * Navigates to the user login section.
+         */
+        function navigateToUserLogin() {
+            hideAllSections();
+            userLoginSection.classList.remove('hidden');
+        }
+
+        /**
+         * Navigates to the chat section.
+         */
+        function navigateToChat() {
+            hideAllSections();
+            chatSection.classList.remove('hidden');
+            // Update the greeting with the user's name
+            if (userName) {
+                chatGreeting.textContent = `Halo, ${userName}!`;
+            } else {
+                chatGreeting.textContent = `Kirim Pesan Baru`; // Fallback if name somehow not set
+            }
+        }
+
+        /**
+         * Navigates to the public board section.
+         */
+        function navigateToPublicBoard() {
+            hideAllSections();
+            publicBoardSection.classList.remove('hidden');
+            setupPublicBoardListener(); // Start listening for approved messages
+        }
+
+        /**
+         * Navigates to the admin login section.
+         */
+        function navigateToAdminLogin() {
+            hideAllSections();
+            adminLoginSection.classList.remove('hidden');
+            adminUsernameInput.value = ''; // Clear inputs
+            adminPasswordInput.value = '';
+            adminPasswordField.classList.add('hidden'); // Hide password field initially
+        }
+
+        /**
+         * Navigates to the admin panel section.
+         */
+        function navigateToAdminPanel() {
+            hideAllSections();
+            adminPanelSection.classList.remove('hidden');
+            adminPanelSection.classList.add('admin-panel-width'); // Apply wider style
+            setupAdminMessagesListener(); // Start listening for admin messages
+        }
+
+        // --- Event Listeners for Navigation ---
+
+        showAdminLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateToAdminLogin();
+        });
+
+        // Event listener for the close button on the admin login page
+        closeAdminLoginBtn.addEventListener('click', () => {
+            navigateToUserLogin(); // Go back to user login
+        });
+
+        // Event listener for the close button on the admin panel page (now handles logout)
+        closeAdminPanelBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('isAdminLoggedIn'); // Clear admin session
+            showAlert('info', 'Logout Berhasil', 'Anda telah berhasil logout dari panel admin.', 1500).then(() => {
+                navigateToUserLogin();
+            });
+        });
+
+        // Event listener for the close button on the chat page
+        closeChatBtn.addEventListener('click', () => {
+            Swal.fire({
+                title: 'Kembali ke halaman login?',
+                text: "Anda akan keluar dari sesi chat anonim.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, kembali!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    navigateToUserLogin();
+                }
+            });
+        });
+
+        // Event listener for the "Lihat Papan Pengumuman Anonim" link
+        showPublicBoardLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateToPublicBoard();
+        });
+
+        // Event listener for the close button on the public board
+        closePublicBoardBtn.addEventListener('click', () => {
+            navigateToChat(); // Go back to the chat page
+        });
+
+        // --- User Authentication and Chat Logic ---
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                showLoading();
+                try {
+                    if (typeof __initial_auth_token !== 'undefined') {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Error signing in:", error);
+                    showAlert('error', 'Kesalahan Autentikasi', 'Gagal masuk. Silakan coba lagi.');
+                } finally {
+                    hideLoading();
+                }
+            }
+            userId = auth.currentUser?.uid || crypto.randomUUID();
+            // Decide which page to show initially
+            if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                navigateToAdminPanel();
+            } else {
+                navigateToUserLogin(); // Default to user login
+            }
+        });
+
+        enterChatBtn.addEventListener('click', () => {
+            const enteredName = nameInput.value.trim();
+            if (enteredName === "") {
+                showAlert('warning', 'Harap Isi Nama', 'Nama tidak boleh kosong untuk masuk ke chat.');
+                return;
+            }
+            // Add validation for minimum 3 characters
+            if (enteredName.length < 3) {
+                showAlert('warning', 'Nama Terlalu Pendek', 'Nama harus memiliki minimal 3 karakter.');
+                return;
+            }
+            // Add validation for 'admin' name
+            if (enteredName.toLowerCase() === CORRECT_USERNAME) {
+                showAlert('warning', 'Nama Tidak Dapat Digunakan', `Nama "${enteredName}" tidak dapat digunakan. Silakan pilih nama lain.`);
+                return; // Stop execution if name is 'admin'
+            }
+
+            userName = enteredName;
+            navigateToChat();
+        });
+
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                enterChatBtn.click();
+            }
+        });
+
+        // Function to check for URLs in message text
+        function containsURL(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}(\/[^\s]*)?)/gi;
+            return urlRegex.test(text);
+        }
+
+        async function sendMessage() {
+            const messageText = messageInput.value.trim();
+
+            // Rate Limiting Check
+            const currentTime = Date.now();
+            if (currentTime - lastMessageSentTime < MESSAGE_COOLDOWN_TIME) {
+                const remainingTime = Math.ceil((MESSAGE_COOLDOWN_TIME - (currentTime - lastMessageSentTime)) / 1000);
+                showAlert('warning', 'Terlalu Cepat!', `Harap tunggu ${remainingTime} detik sebelum mengirim pesan lagi.`);
+                return;
+            }
+
+            if (messageText === "") {
+                showAlert('warning', 'Pesan Kosong', 'Pesan tidak boleh kosong.');
+                return;
+            }
+
+            // URL Validation
+            if (containsURL(messageText)) {
+                showAlert('warning', 'Pesan Tidak Valid', 'Pesan tidak boleh mengandung URL.');
+                return;
+            }
+
+            if (!userId || !userName) {
+                showAlert('error', 'Kesalahan', 'ID pengguna atau nama tidak tersedia. Silakan coba lagi.');
+                return;
+            }
+
+            // Get user's location
+            let userLocation = {};
+            if (navigator.geolocation) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000, enableHighAccuracy: false });
+                    });
+                    userLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                } catch (error) {
+                    console.warn("Could not get user location:", error.message);
+                    // Optionally, inform the user that location could not be obtained
+                    // showAlert('info', 'Lokasi Tidak Tersedia', 'Tidak dapat mengambil lokasi Anda. Pesan akan dikirim tanpa informasi lokasi.');
+                }
+            }
+
+            try {
+                const messagesCollectionRef = collection(db, `artifacts/${appId}/public/data/messages`);
+                await addDoc(messagesCollectionRef, {
+                    message: messageText,
+                    timestamp: serverTimestamp(),
+                    senderId: userId,
+                    senderName: userName,
+                    status: 'pending', // New: Default status is pending for moderation
+                    ...userLocation // Add location data if available
+                });
+                messageInput.value = '';
+                lastMessageSentTime = currentTime; // Update last sent time on success
+                showAlert('success', 'Berhasil!', 'Pesan Anda telah dikirim secara anonim dan akan ditinjau oleh admin.', 2500); // Updated message
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showAlert('error', 'Kesalahan Pengiriman', 'Gagal mengirim pesan. Silakan coba lagi.');
+            }
+        }
+
+        sendMessageBtn.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // --- Public Board Logic ---
+        function setupPublicBoardListener() {
+            // Query all messages, ordered by timestamp, and then filter client-side
+            const q = query(collection(db, `artifacts/${appId}/public/data/messages`), orderBy("timestamp", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                publicMessagesContainer.innerHTML = ''; // Clear current messages
+                const approvedMessages = []; // New array to hold only approved messages
+
+                snapshot.forEach((docData) => {
+                    const data = docData.data();
+                    if (data.status === 'approved') { // Client-side filtering
+                        approvedMessages.push(data);
+                    }
+                });
+
+                if (approvedMessages.length === 0) {
+                    noPublicMessagesText.classList.remove('hidden');
+                } else {
+                    noPublicMessagesText.classList.add('hidden');
+                    approvedMessages.forEach((data) => { // Iterate over approved messages
+                        const messageCard = document.createElement('div');
+                        messageCard.className = 'message-card'; // Reuse message-card style
+
+                        const messageContent = document.createElement('p');
+                        messageContent.textContent = data.message;
+                        messageCard.appendChild(messageContent);
+
+                        // Display admin reply if it exists
+                        if (data.adminReply) {
+                            const adminReplyCard = document.createElement('div');
+                            adminReplyCard.className = 'admin-reply-card';
+                            adminReplyCard.innerHTML = `
+                                <p><strong>Balasan Admin:</strong> ${data.adminReply}</p>
+                                <div class="reply-timestamp">
+                                    ${data.adminReplyTimestamp ? new Date(data.adminReplyTimestamp.toDate()).toLocaleString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                </div>
+                            `;
+                            messageCard.appendChild(adminReplyCard);
+                        }
+
+                        const timestampDiv = document.createElement('div');
+                        timestampDiv.className = 'timestamp';
+                        let displayTime = 'Memuat waktu...';
+                        if (data.timestamp && data.timestamp.toDate) {
+                            const date = data.timestamp.toDate();
+                            displayTime = date.toLocaleString('id-ID', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        // For public board, sender info might be minimal or just "Anonim"
+                        timestampDiv.textContent = `Dikirim Anonim pada ${displayTime}`;
+                        messageCard.appendChild(timestampDiv);
+                        publicMessagesContainer.appendChild(messageCard);
+                    });
+                }
+            }, (error) => {
+                console.error("Error fetching public messages:", error);
+                showAlert('error', 'Kesalahan Memuat Papan', 'Gagal memuat pesan publik. Silakan coba lagi.');
+            });
+        }
+
+
+        // --- Admin Login and Panel Logic ---
+
+        adminUsernameInput.addEventListener('input', () => {
+            if (adminUsernameInput.value.toLowerCase() === CORRECT_USERNAME) {
+                adminPasswordField.classList.remove('hidden');
+            } else {
+                adminPasswordField.classList.add('hidden');
+                adminPasswordInput.value = '';
+            }
+        });
+
+        // Otomatis login ketika password benar
+        adminPasswordInput.addEventListener('input', () => {
+            const username = adminUsernameInput.value.trim();
+            const password = adminPasswordInput.value.trim();
+
+            if (username.toLowerCase() === CORRECT_USERNAME && password === CORRECT_PASSWORD) {
+                sessionStorage.setItem('isAdminLoggedIn', 'true');
+                showAlert('success', 'Login Berhasil!', 'Mengarahkan ke panel admin...', 1500).then(() => {
+                    navigateToAdminPanel();
+                });
+            } else if (username.toLowerCase() === CORRECT_USERNAME && password.length > 0) {
+                // Optionally, you could show a subtle error if password is wrong after some length
+                // For now, no immediate error for incorrect password while typing
+            }
+        });
+
+        /**
+         * Updates the status of a message in Firestore.
+         * @param {string} messageId - The ID of the message document.
+         * @param {string} status - The new status ('approved', 'rejected').
+         */
+        async function updateMessageStatus(messageId, status) {
+            try {
+                const messageRef = doc(db, `artifacts/${appId}/public/data/messages`, messageId);
+                await updateDoc(messageRef, { status: status });
+                showAlert('success', 'Status Diperbarui', `Pesan berhasil ${status === 'approved' ? 'disetujui' : 'ditolak'}.`, 1500);
+            } catch (error) {
+                console.error("Error updating message status:", error);
+                showAlert('error', 'Gagal Memperbarui Status', 'Terjadi kesalahan saat memperbarui status pesan.');
+            }
+        }
+
+        /**
+         * Adds an admin reply to a specific message in Firestore.
+         * @param {string} messageId - The ID of the message document to reply to.
+         * @param {string} replyText - The text of the admin's reply.
+         */
+        async function addAdminReplyToMessage(messageId, replyText) {
+            try {
+                const messageRef = doc(db, `artifacts/${appId}/public/data/messages`, messageId);
+                await updateDoc(messageRef, {
+                    adminReply: replyText,
+                    adminReplyTimestamp: serverTimestamp()
+                });
+                showAlert('success', 'Balasan Terkirim!', 'Balasan admin Anda telah berhasil ditambahkan.', 1500);
+            } catch (error) {
+                console.error("Error adding admin reply:", error);
+                showAlert('error', 'Gagal Mengirim Balasan', 'Terjadi kesalahan saat mengirim balasan admin.');
+            }
+        }
+
+        /**
+         * Renders the list of messages in the admin panel, grouped by sender and then by date.
+         * Adds Approve/Reject/Delete/Reply buttons based on message status.
+         * @param {Array} messages - The array of message objects to display.
+         * @param {string} filterStatus - The status to filter by ('all', 'pending', 'approved', 'rejected').
+         */
+        function renderGroupedAdminMessages(messages, filterStatus) {
+            adminMessagesContainer.innerHTML = ''; // Clear current messages
+
+            let filteredMessages = messages;
+            if (filterStatus !== 'all') {
+                filteredMessages = messages.filter(msg => (msg.status || 'pending') === filterStatus);
+            }
+
+            if (filteredMessages.length === 0) {
+                noAdminMessagesText.classList.remove('hidden');
+                return;
+            } else {
+                noAdminMessagesText.classList.add('hidden');
+            }
+
+            // Group messages by sender and then by date
+            const groupedBySender = {};
+            filteredMessages.forEach(msg => {
+                const senderId = msg.senderId;
+                const senderName = msg.senderName || `Anonim (${msg.senderId.substring(0, 8)}...)`;
+                const messageDate = msg.timestamp ? msg.timestamp.toDate().toISOString().split('T')[0] : 'Tanggal Tidak Diketahui'; //YYYY-MM-DD
+
+                if (!groupedBySender[senderId]) {
+                    groupedBySender[senderId] = {
+                        name: senderName,
+                        dates: {}
+                    };
+                }
+                if (!groupedBySender[senderId].dates[messageDate]) {
+                    groupedBySender[senderId].dates[messageDate] = [];
+                }
+                groupedBySender[senderId].dates[messageDate].push(msg);
+            });
+
+            // Sort senders (e.g., by name or ID) and dates (descending)
+            const sortedSenderIds = Object.keys(groupedBySender).sort((a, b) => {
+                const nameA = groupedBySender[a].name.toLowerCase();
+                const nameB = groupedBySender[b].name.toLowerCase();
+                if (nameA < nameB) return -1;
+                if (nameA > nameB) return 1;
+                return 0;
+            });
+
+            sortedSenderIds.forEach(senderId => {
+                const senderGroupDiv = document.createElement('div');
+                senderGroupDiv.className = 'bg-gray-100 p-4 rounded-lg shadow-md mb-6';
+                senderGroupDiv.id = `sender-group-${senderId}`; // Add ID for scrolling
+                senderGroupDiv.innerHTML = `
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Pengirim: ${groupedBySender[senderId].name} (ID: ${senderId.substring(0, 8)}...)</h3>
+                `;
+
+                const sortedDates = Object.keys(groupedBySender[senderId].dates).sort((a, b) => b.localeCompare(a)); // Sort dates descending
+
+                sortedDates.forEach(date => {
+                    const dateGroupDiv = document.createElement('div');
+                    dateGroupDiv.className = 'bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4';
+                    dateGroupDiv.innerHTML = `
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Tanggal: ${new Date(date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h4>
+                    `;
+
+                    groupedBySender[senderId].dates[date].forEach(data => {
+                        const messageId = data.id;
+                        const messageStatus = data.status || 'pending'; // Default to pending if not set
+
+                        const messageCard = document.createElement('div');
+                        messageCard.className = 'message-card mb-2'; // Added mb-2 for spacing between messages in the same group
+
+                        const messageContent = document.createElement('p');
+                        messageContent.textContent = data.message;
+                        messageCard.appendChild(messageContent);
+
+                        // Display existing admin reply in admin panel
+                        if (data.adminReply) {
+                            const adminReplyCard = document.createElement('div');
+                            adminReplyCard.className = 'admin-reply-card';
+                            adminReplyCard.innerHTML = `
+                                <p><strong>Balasan Admin:</strong> ${data.adminReply}</p>
+                                <div class="reply-timestamp">
+                                    ${data.adminReplyTimestamp ? new Date(data.adminReplyTimestamp.toDate()).toLocaleString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                </div>
+                            `;
+                            messageCard.appendChild(adminReplyCard);
+                        }
+
+                        const timestampDiv = document.createElement('div');
+                        timestampDiv.className = 'timestamp';
+                        let displayTime = 'Memuat waktu...';
+                        if (data.timestamp && data.timestamp.toDate) {
+                            const time = data.timestamp.toDate();
+                            displayTime = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                        }
+                        timestampDiv.textContent = `Pukul: ${displayTime}`;
+                        messageCard.appendChild(timestampDiv);
+
+                        // Display Location Information
+                        if (data.latitude && data.longitude) {
+                            const locationDiv = document.createElement('div');
+                            locationDiv.className = 'location-info';
+                            locationDiv.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 12.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M12 22.5c-3.25 0-6-2.25-6-6a6 6 0 0 1 12 0c0 3.75-2.75 6-6 6Z"/></svg>
+                                <a href="https://www.google.com/maps?q=${data.latitude},${data.longitude}" target="_blank" class="text-blue-600 hover:underline">Lihat Lokasi</a>
+                            `;
+                            messageCard.appendChild(locationDiv);
+                        }
+
+
+                        // Status Badge
+                        const statusBadge = document.createElement('span');
+                        statusBadge.textContent = messageStatus.toUpperCase();
+                        statusBadge.className = `status-badge status-${messageStatus}`;
+                        messageCard.appendChild(statusBadge);
+
+                        // Moderation Buttons
+                        const moderationButtonsDiv = document.createElement('div');
+                        moderationButtonsDiv.className = 'moderation-buttons';
+
+                        if (messageStatus === 'pending') {
+                            const approveButton = document.createElement('button');
+                            approveButton.textContent = 'Setujui';
+                            approveButton.className = 'approve-btn text-white';
+                            approveButton.addEventListener('click', () => updateMessageStatus(messageId, 'approved'));
+                            moderationButtonsDiv.appendChild(approveButton);
+
+                            const rejectButton = document.createElement('button');
+                            rejectButton.textContent = 'Tolak';
+                            rejectButton.className = 'reject-btn text-white';
+                            rejectButton.addEventListener('click', () => updateMessageStatus(messageId, 'rejected'));
+                            moderationButtonsDiv.appendChild(rejectButton);
+                        }
+
+                        // Reply Button
+                        const replyButton = document.createElement('button');
+                        replyButton.textContent = data.adminReply ? 'Edit Balasan' : 'Balas'; // Change text if already replied
+                        replyButton.className = 'reply-btn text-white';
+                        replyButton.addEventListener('click', async () => {
+                            const { value: replyText } = await Swal.fire({
+                                title: data.adminReply ? 'Edit Balasan Admin' : 'Balas Pesan Ini',
+                                input: 'textarea',
+                                inputValue: data.adminReply || '', // Pre-fill if editing
+                                inputPlaceholder: 'Ketik balasan admin Anda di sini...',
+                                inputAttributes: {
+                                    'aria-label': 'Ketik balasan admin Anda di sini'
+                                },
+                                showCancelButton: true,
+                                confirmButtonText: data.adminReply ? 'Simpan Perubahan' : 'Kirim Balasan',
+                                cancelButtonText: 'Batal',
+                                confirmButtonColor: '#3b82f6',
+                                cancelButtonColor: '#6b7280'
+                            });
+
+                            if (replyText !== undefined && replyText !== null) { // Check for undefined and null to handle cancel
+                                if (replyText.trim() === '') {
+                                    showAlert('warning', 'Balasan Kosong', 'Balasan admin tidak boleh kosong.');
+                                } else {
+                                    addAdminReplyToMessage(messageId, replyText.trim());
+                                }
+                            }
+                        });
+                        moderationButtonsDiv.appendChild(replyButton);
+
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Hapus';
+                        deleteButton.className = 'bg-red-500 text-white py-1 px-3 rounded-md text-sm self-end hover:bg-red-600 transition duration-200';
+                        deleteButton.addEventListener('click', async () => {
+                            Swal.fire({
+                                title: 'Apakah Anda yakin?',
+                                text: "Anda tidak akan bisa mengembalikan pesan ini!",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#dc2626',
+                                cancelButtonColor: '#6b7280',
+                                confirmButtonText: 'Ya, hapus!',
+                                cancelButtonText: 'Batal'
+                            }).then(async (result) => {
+                                if (result.isConfirmed) {
+                                    try {
+                                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/messages`, messageId));
+                                        showAlert('success', 'Dihapus!', 'Pesan telah berhasil dihapus.', 1500);
+                                    } catch (error) {
+                                        console.error("Error deleting document: ", error);
+                                        showAlert('error', 'Gagal!', 'Gagal menghapus pesan.');
+                                    }
+                                }
+                            });
+                        });
+                        moderationButtonsDiv.appendChild(deleteButton); // Add delete button to moderation buttons div
+
+                        messageCard.appendChild(moderationButtonsDiv);
+                        dateGroupDiv.appendChild(messageCard);
+                    });
+                    senderGroupDiv.appendChild(dateGroupDiv);
+                });
+                adminMessagesContainer.appendChild(senderGroupDiv);
+            });
+        }
+
+        /**
+         * Renders the list of unique users and their message counts.
+         * @param {Object} usersData - An object where keys are user IDs and values are {userName, messageCount}.
+         */
+        function renderUserList(usersData) {
+            userListContainer.innerHTML = ''; // Clear current list
+            const userEntries = Object.values(usersData);
+
+            if (userEntries.length === 0) {
+                noUsersText.classList.remove('hidden');
+            } else {
+                noUsersText.classList.add('hidden');
+                userEntries.sort((a, b) => b.messageCount - a.messageCount); // Sort by message count descending
+
+                userEntries.forEach(user => {
+                    const userCard = document.createElement('div');
+                    userCard.className = 'bg-white p-3 rounded-lg shadow-sm flex justify-between items-center user-list-item'; // Added user-list-item class
+                    userCard.dataset.userId = user.userId; // Store userId in data attribute
+
+                    userCard.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-800">${user.userName}</p>
+                            <p class="text-xs text-gray-500">ID: ${user.userId.substring(0, 8)}...</p>
+                        </div>
+                        <span class="text-sm font-bold text-indigo-600">${user.messageCount} pesan</span>
+                    `;
+                    userListContainer.appendChild(userCard);
+
+                    // Add click listener to scroll to user's messages
+                    userCard.addEventListener('click', () => {
+                        const targetUserId = userCard.dataset.userId;
+                        const targetElement = document.getElementById(`sender-group-${targetUserId}`);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    });
+                });
+            }
+        }
+
+
+        function setupAdminMessagesListener() {
+            // Fetch all messages for admin panel (no status filter here)
+            const q = query(collection(db, `artifacts/${appId}/public/data/messages`), orderBy("timestamp", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                const allMessages = []; // Collect all messages first
+                const usersData = {}; // To store unique users and their message counts
+                let pendingCount = 0;
+                let approvedCount = 0;
+                let rejectedCount = 0;
+
+                snapshot.forEach((docData) => {
+                    const data = docData.data();
+                    // Add the document ID to the data object for easier access
+                    allMessages.push({ id: docData.id, ...data });
+
+                    // Count messages by status
+                    const status = data.status || 'pending';
+                    if (status === 'pending') pendingCount++;
+                    else if (status === 'approved') approvedCount++;
+                    else if (status === 'rejected') rejectedCount++;
+
+                    // Collect user data for user management
+                    if (data.senderId) {
+                        if (!usersData[data.senderId]) {
+                            usersData[data.senderId] = {
+                                userId: data.senderId,
+                                userName: data.senderName || `Anonim (${data.senderId.substring(0, 8)}...)`,
+                                messageCount: 0
+                            };
+                        }
+                        usersData[data.senderId].messageCount++;
+                    }
+                });
+
+                // Update statistics display
+                totalMessagesCount.textContent = allMessages.length;
+                pendingMessagesCount.textContent = pendingCount;
+                approvedMessagesCount.textContent = approvedCount;
+                rejectedMessagesCount.textContent = rejectedCount;
+
+                renderGroupedAdminMessages(allMessages, currentMessageFilter); // Render messages grouped and filtered
+                renderUserList(usersData); // Render the collected user data
+
+            }, (error) => {
+                console.error("Error fetching real-time admin messages:", error);
+                showAlert('error', 'Kesalahan Memuat Pesan', 'Gagal memuat pesan admin. Silakan coba lagi.');
+            });
+        }
+
+        // --- Admin Panel Filter Buttons Logic ---
+        const filterButtons = [filterAllBtn, filterPendingBtn, filterApprovedBtn, filterRejectedBtn];
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to the clicked button
+                button.classList.add('active');
+
+                // Set the current filter based on button ID
+                if (button === filterAllBtn) currentMessageFilter = 'all';
+                else if (button === filterPendingBtn) currentMessageFilter = 'pending';
+                else if (button === filterApprovedBtn) currentMessageFilter = 'approved';
+                else if (button === filterRejectedBtn) currentMessageFilter = 'rejected';
+
+                // Re-render messages with the new filter
+                // We need to re-fetch or use the cached allMessages, but since onSnapshot is always active,
+                // we just need to trigger the render with the new filter.
+                // The onSnapshot callback will re-run and call renderGroupedAdminMessages with the latest allMessages.
+                // To force a re-render without a new snapshot, we can directly call renderGroupedAdminMessages
+                // with the last known `allMessages` if we cache it globally in admin panel scope.
+                // For simplicity, let's assume onSnapshot will trigger soon enough, or we can store allMessages.
+                // Let's modify setupAdminMessagesListener to store allMessages in a global variable in its scope.
+            });
+        });
+
+        // To make filtering work immediately without waiting for a new snapshot,
+        // we need to store `allMessages` globally within the admin panel's script scope.
+        let cachedAllMessages = []; // New global variable in this script's scope
+
+        // Modify setupAdminMessagesListener to populate cachedAllMessages
+        const originalSetupAdminMessagesListener = setupAdminMessagesListener;
+        setupAdminMessagesListener = function() {
+            const q = query(collection(db, `artifacts/${appId}/public/data/messages`), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snapshot) => {
+                cachedAllMessages = []; // Clear previous messages
+                const usersData = {};
+                let pendingCount = 0;
+                let approvedCount = 0;
+                let rejectedCount = 0;
+
+                snapshot.forEach((docData) => {
+                    const data = docData.data();
+                    cachedAllMessages.push({ id: docData.id, ...data });
+
+                    const status = data.status || 'pending';
+                    if (status === 'pending') pendingCount++;
+                    else if (status === 'approved') approvedCount++;
+                    else if (status === 'rejected') rejectedCount++;
+
+                    if (data.senderId) {
+                        if (!usersData[data.senderId]) {
+                            usersData[data.senderId] = {
+                                userId: data.senderId,
+                                userName: data.senderName || `Anonim (${data.senderId.substring(0, 8)}...)`,
+                                messageCount: 0
+                            };
+                        }
+                        usersData[data.senderId].messageCount++;
+                    }
+                });
+
+                totalMessagesCount.textContent = cachedAllMessages.length;
+                pendingMessagesCount.textContent = pendingCount;
+                approvedMessagesCount.textContent = approvedCount;
+                rejectedMessagesCount.textContent = rejectedCount;
+
+                renderGroupedAdminMessages(cachedAllMessages, currentMessageFilter); // Use cached messages for rendering
+                renderUserList(usersData);
+
+            }, (error) => {
+                console.error("Error fetching real-time admin messages:", error);
+                showAlert('error', 'Kesalahan Memuat Pesan', 'Gagal memuat pesan admin. Silakan coba lagi.');
+            });
+        };
+
+        // Update filter button event listeners to use cachedAllMessages
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                if (button === filterAllBtn) currentMessageFilter = 'all';
+                else if (button === filterPendingBtn) currentMessageFilter = 'pending';
+                else if (button === filterApprovedBtn) currentMessageFilter = 'approved';
+                else if (button === filterRejectedBtn) currentMessageFilter = 'rejected';
+
+                renderGroupedAdminMessages(cachedAllMessages, currentMessageFilter); // Re-render with cached data
+            });
+        });
+
+
+        // Download Messages as CSV function
+        downloadMessagesBtn.addEventListener('click', () => {
+            if (cachedAllMessages.length === 0) {
+                showAlert('info', 'Tidak Ada Pesan', 'Tidak ada pesan untuk diunduh.');
+                return;
+            }
+
+            const headers = [
+                "ID Pesan",
+                "Pesan",
+                "Nama Pengirim",
+                "ID Pengirim",
+                "Status",
+                "Waktu Kirim",
+                "Balasan Admin",
+                "Waktu Balasan Admin"
+            ];
+
+            const csvRows = [];
+            csvRows.push(headers.join(',')); // Add headers to CSV
+
+            cachedAllMessages.forEach(message => {
+                const row = [
+                    `"${message.id}"`, // Quote ID to ensure it's treated as string
+                    `"${(message.message || '').replace(/"/g, '""')}"`, // Escape double quotes
+                    `"${(message.senderName || '').replace(/"/g, '""')}"`,
+                    `"${(message.senderId || '').replace(/"/g, '""')}"`,
+                    `"${(message.status || 'pending').replace(/"/g, '""')}"`,
+                    `"${message.timestamp ? new Date(message.timestamp.toDate()).toLocaleString('id-ID') : ''}"`,
+                    `"${(message.adminReply || '').replace(/"/g, '""')}"`,
+                    `"${message.adminReplyTimestamp ? new Date(message.adminReplyTimestamp.toDate()).toLocaleString('id-ID') : ''}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            const csvString = csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', 'pesan_anonim.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            showAlert('success', 'Berhasil Mengunduh', 'Pesan telah berhasil diunduh sebagai pesan_anonim.csv', 2000);
+        });
+
+
+        // Initialize display based on session storage
+        window.onload = () => {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                        navigateToAdminPanel();
+                    } else {
+                        navigateToUserLogin();
+                    }
+                } else {
+                    // If not authenticated yet, wait for onAuthStateChanged to complete
+                    // or handle anonymous sign-in if needed.
+                    // The onAuthStateChanged listener above already handles this.
+                }
+            });
+        };
+    </script>
+</body>
+</html>
 
